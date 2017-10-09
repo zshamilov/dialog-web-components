@@ -11,6 +11,7 @@ export type SwitcherProps = {
   className?: string,
   children?: Node,
   id: string,
+  danger: boolean,
   name: string,
   value: boolean,
   disabled: boolean,
@@ -23,6 +24,7 @@ class Switcher extends PureComponent<SwitcherProps> {
 
   static defaultProps = {
     value: false,
+    danger: false,
     disabled: false
   };
 
@@ -61,10 +63,11 @@ class Switcher extends PureComponent<SwitcherProps> {
   }
 
   render() {
-    const { id, value, disabled, name, tabIndex } = this.props;
+    const { id, value, disabled, name, tabIndex, danger } = this.props;
     const className = classNames(styles.container, this.props.className, {
       [styles.checked]: value,
-      [styles.disabled]: disabled
+      [styles.disabled]: disabled,
+      [styles.danger]: danger
     });
 
     return (
