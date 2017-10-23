@@ -6,6 +6,7 @@
 import React, { PureComponent } from 'react';
 import classNames from 'classnames';
 import getImageSize from '../../utils/getImageSize';
+import isImageCached from '../../utils/isImageCached';
 import styles from './Image.css';
 
 const STATE_LOADING = 1;
@@ -53,12 +54,14 @@ class Image extends PureComponent {
 
   componentDidMount(): void {
     if (this.props.src) {
-      this.startFetch(this.props.src);
+      if (!isImageCached(this.props.src)) {
+        this.startFetch(this.props.src);
+      }
     }
   }
 
   componentWillReceiveProps({ src }: Props): void {
-    if (src && this.props.src !== src) {
+    if (src && this.props.src !== src && !isImageCached(this.props.src)) {
       this.startFetch(src);
     }
   }
@@ -112,7 +115,7 @@ class Image extends PureComponent {
     const { preview, src } = this.props;
     const { state } = this.state;
 
-    const isPreview = state !== STATE_SUCCESS;
+    const isPreview = !(isImageCached(this.props.src) || state === STATE_SUCCESS);
     const source = isPreview ? preview : src;
     const { width, height } = this.getSize();
     const className = classNames(styles.container, this.props.className);
