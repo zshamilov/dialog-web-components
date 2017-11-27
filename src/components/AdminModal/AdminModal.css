@@ -24,7 +24,7 @@
 
 .list {
   padding: 0;
-  height: 510px;
+  min-height: 300px;
 }
 
 .avatar {

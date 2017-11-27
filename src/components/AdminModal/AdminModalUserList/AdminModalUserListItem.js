@@ -1,9 +1,9 @@
-/**
+/*
  * Copyright 2017 dialog LLC <info@dlg.im>
  * @flow
  */
 
-import type { ChatMember } from '../../ActivityListMembers/types';
+import type { GroupMember } from '@dlghq/dialog-types';
 import React, { PureComponent } from 'react';
 import classNames from 'classnames';
 import styles from './AdminModalUserList.css';
@@ -11,19 +11,12 @@ import Avatar from '../../Avatar/Avatar';
 import getAvatarPlaceholder from '../../../utils/getAvatarPlaceholder';
 import PeerInfoTitle from '../../PeerInfoTitle/PeerInfoTitle';
 
-export type Props = {
-  user: ChatMember,
-  onClick: (user: ChatMember) => mixed,
+type Props = {
+  user: GroupMember,
   hovered: boolean
 };
 
-class AdminModalUserListItem extends PureComponent {
-  props: Props;
-
-  handleClick = () => {
-    this.props.onClick(this.props.user);
-  };
-
+class AdminModalUserListItem extends PureComponent<Props> {
   renderAvatar() {
     const { user: { peerInfo: { avatar, title, peer: { id } } } } = this.props;
     const placeholder = getAvatarPlaceholder(id);
@@ -46,7 +39,7 @@ class AdminModalUserListItem extends PureComponent {
     });
 
     return (
-      <div onClick={this.handleClick} className={className}>
+      <div className={className}>
         <div className={styles.userWrapper}>
           {this.renderAvatar()}
           <span className={styles.title}>

@@ -1,9 +1,9 @@
-/**
+/*
  * Copyright 2017 dialog LLC <info@dlg.im>
  * @flow
  */
 
-import type { ChatMember } from '../ActivityListMembers/types';
+import type { GroupMember } from '@dlghq/dialog-types';
 import React, { PureComponent } from 'react';
 import PeerInfoTitle from '../PeerInfoTitle/PeerInfoTitle';
 import Avatar from '../Avatar/Avatar';
@@ -11,12 +11,10 @@ import styles from './AdminModal.css';
 import getAvatarPlaceholder from '../../utils/getAvatarPlaceholder';
 
 type Props = {
-  user: ChatMember
+  user: GroupMember
 };
 
-class AdminModalUser extends PureComponent {
-  props: Props;
-
+class AdminModalUser extends PureComponent<Props> {
   render() {
     const { user: { peerInfo: { title, avatar, peer: { id } } } } = this.props;
     const placeholder = getAvatarPlaceholder(id);

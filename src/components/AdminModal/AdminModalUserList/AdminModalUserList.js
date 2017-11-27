@@ -1,9 +1,9 @@
-/**
+/*
  * Copyright 2017 dialog LLC <info@dlg.im>
  * @flow
  */
 
-import type { ChatMember } from '../../ActivityListMembers/types';
+import type { GroupMember } from '@dlghq/dialog-types';
 import type { SelectorState } from '../../../entities';
 import React, { PureComponent } from 'react';
 import styles from './AdminModalUserList.css';
@@ -11,42 +11,34 @@ import { AutoSizer } from 'react-virtualized';
 import AdminModalUserListItem from './AdminModalUserListItem';
 import SelectList from '../../SelectList/SelectList';
 
-export type Props = {
-  selector: SelectorState<ChatMember>,
-  onChange: (selector: SelectorState<ChatMember>) => mixed,
-  onSelect: (user: ChatMember) => mixed
+type Props = {
+  selector: SelectorState<GroupMember>,
+  onChange: (selector: SelectorState<GroupMember>) => mixed
 };
 
-class AdminModalUserList extends PureComponent {
-  props: Props;
-
-  handleChange = (selector: SelectorState<ChatMember>) => {
+class AdminModalUserList extends PureComponent<Props> {
+  handleChange = (selector: SelectorState<GroupMember>) => {
     this.props.onChange(selector);
   };
 
-  handleUserSelect = (user: ChatMember) => {
-    this.props.onSelect(user);
-  };
-
-  renderRow = ({ item, hovered }: $FlowIssue): React.Element<any> => {
+  renderRow = ({ item, hovered }: *) => {
     return (
       <AdminModalUserListItem
-        hovered={hovered}
-        onClick={this.handleUserSelect}
         user={item}
+        hovered={hovered}
       />
     );
   };
 
   render() {
     return (
-      <AutoSizer>
+      <AutoSizer disableHeight>
         {({ width }) => (
           <SelectList
             className={styles.container}
             width={width}
             itemHeight={51}
-            itemVisibleCount={10}
+            itemVisibleCount={7}
             selector={this.props.selector}
             onChange={this.handleChange}
             renderItem={this.renderRow}

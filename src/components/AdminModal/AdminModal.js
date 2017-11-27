@@ -1,14 +1,16 @@
-/**
+/*
  * Copyright 2017 dialog LLC <info@dlg.im>
  * @flow
  */
 
-import type { SelectorState } from '../../entities';
-import type { ChatMember } from '../ActivityListMembers/types';
-import type { UserRights } from './AdminModalForm';
+import type { Group, GroupMember, GroupMemberPermission } from '@dlghq/dialog-types';
+import type { Permission } from './types';
+import { Set } from 'immutable';
 import React, { PureComponent } from 'react';
 import classNames from 'classnames';
 import { Text } from '@dlghq/react-l10n';
+import { getDefaultPermissions } from '../../utils/acl';
+import { MemberSelectorState, type SelectorState } from '../../entities';
 import Modal from '../Modal/Modal';
 import Button from '../Button/Button';
 import Icon from '../Icon/Icon';
@@ -24,76 +26,102 @@ import styles from './AdminModal.css';
 
 type Props = {
   className?: string,
-  selector: SelectorState<ChatMember>,
-  rights: UserRights,
-  onChange: (selector: SelectorState<ChatMember>) => any,
-  onRightsChange: (rights: UserRights) => any,
-  onSubmit: (rights: UserRights) => any,
-  onOwnershipTranfser: (user: ?ChatMember) => mixed,
-  onClose: () => any
+  uid: number,
+  group: Group,
+  members: GroupMember[],
+  forceMember?: ?GroupMember,
+  onAddAdmin: (gid: number, uid: number, permissions: GroupMemberPermission[]) => mixed,
+  onTransferOwnership: (gid: number, uid: number) => mixed,
+  onClose: () => mixed
 }
 
 type State = {
-  current: ?ChatMember
+  selector: SelectorState<GroupMember>,
+  permissions: Set<Permission>
 };
 
-class AdminModal extends PureComponent {
-  props: Props;
-  state: State;
-
+class AdminModal extends PureComponent<Props, State> {
   constructor(props: Props) {
     super(props);
 
+    let selector = MemberSelectorState.create(props.members);
+    if (props.forceMember) {
+      selector = selector.addSelected(props.forceMember);
+    }
+
     this.state = {
-      current: null
+      selector,
+      permissions: Set(getDefaultPermissions(props.group))
     };
   }
 
-  handleSelect = (user: ChatMember) => {
-    this.setState({ current: user });
-  };
-
   handleCancel = () => {
-    this.setState({ current: null });
+    this.setState({
+      selector: this.state.selector.clearSelection(),
+      permissions: Set(getDefaultPermissions(this.props.group))
+    });
   };
 
   handleSubmit = () => {
-    this.props.onSubmit(this.props.rights);
-    this.setState({ current: null });
+    const { group } = this.props;
+    const member = this.getSelectedMember();
+    if (member) {
+      if (this.state.permissions.has('transfer_ownership')) {
+        this.props.onTransferOwnership(group.id, member.peerInfo.peer.id);
+      } else {
+        this.props.onAddAdmin(group.id, member.peerInfo.peer.id, this.state.permissions.toArray());
+      }
+    }
   };
 
-  handleChange = (selector: SelectorState<ChatMember>) => {
-    this.props.onChange(selector);
+  handleChange = (selector: SelectorState<GroupMember>) => {
+    this.setState({ selector });
   };
 
-  handleOwnershipTranfser = () => {
-    this.props.onOwnershipTranfser(this.state.current);
+  handlePermissionsChange = (permissions: Set<Permission>) => {
+    this.setState({ permissions });
   };
+
+  getSelectedMember(): ?GroupMember {
+    return this.state.selector.getSelected().first();
+  }
+
+  getSubmitLabel(): string {
+    const { group } = this.props;
+    if (this.state.permissions.has('transfer_ownership')) {
+      return `AdminModal.submit.transfer.${group.type}`;
+    }
+
+    return 'AdminModal.submit.update';
+  }
 
   renderContent() {
-    if (this.state.current) {
+    const { uid, group } = this.props;
+    const member = this.getSelectedMember();
+
+    if (member) {
       return (
         <div>
           <ModalBody className={styles.body}>
-            <AdminModalUser user={this.state.current} />
+            <AdminModalUser user={member} />
             <AdminModalForm
-              id="edit_used_rights"
-              rights={this.props.rights}
-              onChange={this.props.onRightsChange}
-              onSubmit={this.props.onSubmit}
-              onOwnershipTranfser={this.handleOwnershipTranfser}
+              id="edit_user_permissions"
+              uid={uid}
+              group={group}
+              permissions={this.state.permissions}
+              onSubmit={this.handleSubmit}
+              onChange={this.handlePermissionsChange}
             />
           </ModalBody>
           <ModalFooter className={styles.footer}>
             <Button
-              onClick={this.handleSubmit}
               rounded={false}
-              form="edit_used_rights"
+              form="edit_user_permissions"
               type="submit"
               theme="success"
               className={styles.footerButton}
             >
-              <Text id="AdminModal.add_admin" />
+              <Text id={this.getSubmitLabel()} />
             </Button>
           </ModalFooter>
         </div>
@@ -103,13 +131,12 @@ class AdminModal extends PureComponent {
     return (
       <ModalBody className={styles.body}>
         <AdminModalUserSearch
-          selector={this.props.selector}
+          selector={this.state.selector}
           onChange={this.handleChange}
         />
         <div className={styles.list}>
           <AdminModalUserList
-            selector={this.props.selector}
-            onSelect={this.handleSelect}
+            selector={this.state.selector}
             onChange={this.handleChange}
           />
         </div>
@@ -137,7 +164,6 @@ class AdminModal extends PureComponent {
         </ModalHeader>
         {this.renderContent()}
       </Modal>
-
     );
   }
 }

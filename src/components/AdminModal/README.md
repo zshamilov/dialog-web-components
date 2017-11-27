@@ -1,33 +1,34 @@
 ```jsx
-const { PeerInfoSelectorState } = require('../../entities');
 const contacts = require('../ContactList/mock/contacts.json');
-const chatMembers = contacts.map((contact) => {
-  return {
-    peerInfo: contact
-  }
-});
 
-const initialState = {
-  isOpen: false,
-  rights: {
-    canChangeInfo: true,
-    canBan: true,
-    canPinMessage: true,
-    canDeleteMessage: false,
-    canInvite: true,
-    canAddAdmins: false
-  },
-  selector: PeerInfoSelectorState.create(chatMembers)
+const group = {
+  id: 123,
+  type: 'channel',
+  name: 'Test Group',
+  about: null,
+  avatar: null,
+  bigAvatar: null,
+  placeholder: 'red',
+  adminId: 100500,
+  members: contacts.map((contact) => {
+    return {
+      peerInfo: contact,
+      permissions: []
+    }
+  }),
+  isMember: true,
+  canSendMessage: null,
+  shortname: null,
+  topic: null
+};
+
+initialState = {
+  isOpen: false
 };
 
 const actions = {
-  onChange: (selector) => setState({ selector }),
-  onSelect: (user) => setState({ user }),
-  onRightsChange: (rights) => setState({ rights }),
-  onOwnershipTranfser: (user) => {
-    console.debug('onOwnershipTranfser', user)
-  },
-  onSubmit: (rights) => setState({ rights }),
+  onAddAdmin: (...args) => console.log('onAddAdmin', ...args),
+  onTransferOwnership: (...args) => console.log('onTransferOwnership', ...args),
   onClose: () => setState({ isOpen: false })
 };
 
@@ -38,8 +39,9 @@ const handleOpen = () => setState({ isOpen: true });
   {
     state.isOpen ? (
       <AdminModal
-        rights={state.rights}
-        selector={state.selector}
+        uid={100500}
+        group={group}
+        members={group.members}
         {...actions}
       />
     ) : null

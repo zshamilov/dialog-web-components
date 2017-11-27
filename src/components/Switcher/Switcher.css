@@ -7,6 +7,9 @@
 :root {
   --switcher-danger-background-color: var(--color-danger);
   --switcher-danger-active-background-color: color(var(--color-danger) lightness(+8%));
+  --switcher-hint-font-size: var(--default-font-size-small);
+  --switcher-hint-color: var(--modal-font-color-light);
+  --switcher-hint-font-family: var(--switcher-label-font-family);
 }
 
 .container,
@@ -177,4 +180,15 @@
   & strong {
     font-weight: 500;
   }
+}
+
+.hint {
+  font-family: var(--switcher-hint-font-family);
+  padding-top: 6px;
+  padding-left: 46px;
+  cursor: default;
+  user-select: none;
+  font-size: var(--switcher-hint-font-size);
+  line-height: 1.3;
+  color: var(--switcher-hint-color);
 }
