@@ -23,11 +23,10 @@ const searchMessages = [{
 
 initialState = {
   query: 'Test query',
-  peers: [],
+  peers: [peerInfo.bot, messages[0].sender],
   messages: {
-    pending: false,
-    error: null,
-    value: []
+    ...state.messages,
+    value: searchMessages
   }
 };
 
@@ -69,8 +68,10 @@ const onGoToPeer = (peer) => console.debug('onGoToPeer', { peer });
     <Button onClick={toggleError} size="small" theme="primary" style={{ marginRight: 4 }}>Toggle Error</Button>
     <Button onClick={toggleResults} size="small" theme="primary" style={{ marginRight: 4 }}>Toggle Results</Button>
   </div>
-  <div style={{ width: 270, background: '#f5f5f5', height: 500, position: 'relative', display: 'flex' }}>
+  <div style={{ background: '#f5f5f5', display: 'block' }}>
     <SidebarSearchResults
+      width={270}
+      height={500}
       query={state.query}
       peers={state.peers}
       messages={state.messages}

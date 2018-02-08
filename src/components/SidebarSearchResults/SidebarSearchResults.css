@@ -19,11 +19,9 @@
 
 /* Styles */
 .container {
+  display: block;
   font-family: var(--sidebar-search-result-font-size);
-  position: relative;
-  flex: 1 1 auto;
-  overflow: auto;
-  @apply --flex-fix;
+  box-sizing: border-box;
 }
 
 .spinnerWrapper {

@@ -19,6 +19,7 @@ type Props = {
   focus: Message,
   before: Message[],
   after: Message[],
+  onMeasure: () => void,
   onGoToPeer: (peer: Peer) => mixed,
   onGoToMessage: (peer: Peer, message: Message) => mixed
 }
@@ -28,12 +29,25 @@ type State = {
 };
 
 class SidebarSearchItem extends PureComponent<Props, State> {
+  static getComponentHeight(hasBefore: boolean, hasAfter: boolean) {
+    const header = 36;
+    const message = 50;
+
+    return header + message + (hasBefore ? message : 0) + (hasAfter ? message : 0);
+  }
+
   constructor(props: Props) {
     super(props);
 
     this.state = {
       collapsed: true
     };
+  }
+
+  componentDidUpdate(prevProps: Props, prevState: State) {
+    if (this.state.collapsed !== prevState.collapsed) {
+      this.props.onMeasure();
+    }
   }
 
   handleGoToPeer = () => {

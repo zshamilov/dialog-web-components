@@ -25,6 +25,10 @@ class SidebarPeerItem extends PureComponent<Props> {
     active: false
   };
 
+  static getComponentHeight() {
+    return 46;
+  }
+
   handleClick = (): void => {
     const { info: { peer }, onSelect } = this.props;
 

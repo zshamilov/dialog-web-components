@@ -14,6 +14,8 @@ export type SearchEntity = {
 
 export type SidebarSearchResultsProps = {
   className?: string,
+  width: number,
+  height: number,
   query: string,
   peers: PeerInfo[],
   messages: Field<SearchEntity[]>,

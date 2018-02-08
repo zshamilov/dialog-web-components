@@ -3,106 +3,125 @@
  * @flow
  */
 
-import type { SidebarSearchResultsProps } from './types';
-import type { PeerInfo } from '@dlghq/dialog-types';
+import type { SidebarSearchResultsProps as Props } from './types';
 import React, { PureComponent } from 'react';
-import { Text } from '@dlghq/react-l10n';
-import Emoji from '../Emoji/Emoji';
-import Error from '../Error/Error';
-import Spinner from '../Spinner/Spinner';
+import { List, CellMeasurer, CellMeasurerCache } from 'react-virtualized';
 import classNames from 'classnames';
+import SearchSpinner from './SearchSpinner';
+import SearchResultCount from './SearchResultCount';
+import SearchMessagesError from './SearchMessagesError';
 import SidebarPeerItem from '../SidebarPeerItem/SidebarPeerItem';
 import SidebarSearchItem from './SidebarSearchItem/SidebarSearchItem';
 import styles from './SidebarSearchResults.css';
 
-class SidebarSearchResults extends PureComponent<SidebarSearchResultsProps> {
-  renderPeers() {
-    const { peers } = this.props;
+class SidebarSearchResults extends PureComponent<Props> {
+  cache: CellMeasurerCache;
 
-    if (!peers.length) {
-      return null;
-    }
+  constructor(props: Props) {
+    super(props);
 
-    return peers.map((peerInfo: PeerInfo) => {
-      return (
-        <SidebarPeerItem
-          key={peerInfo.peer.id}
-          active={false}
-          counter={0}
-          onSelect={this.props.onGoToPeer}
-          info={peerInfo}
-        />
-      );
+    this.cache = new CellMeasurerCache({
+      fixedWidth: true,
+      defaultHeight: SidebarSearchItem.getComponentHeight(true, true)
     });
+
+    this.updateCache(props);
   }
 
-  renderMessages() {
-    const { messages } = this.props;
+  getRowCount(): number {
+    const { peers, messages } = this.props;
 
-    if (messages.pending) {
-      return (
-        <div className={styles.spinnerWrapper}>
-          <Spinner className={styles.spinner} size="large" />
-        </div>
-      );
+    return peers.length + ((messages.pending || messages.error) ? 1 : 1 + messages.value.length);
+  }
+
+  updateCache(props: Props) {
+    const peerHeight = SidebarPeerItem.getComponentHeight();
+    for (let i = 0; i < props.peers.length; i++) {
+      this.cache.set(i, 0, props.width, peerHeight);
     }
 
-    if (messages.error) {
-      return (
-        <div className={styles.text}>
-          <Emoji char="❗" size={50} className={styles.textEmoji} />
-          <Error className={styles.error}>
-            <Text
-              html
-              tagName="div"
-              id="SidebarSearchResults.error"
-              values={{ error: messages.error.message }}
-            />
-          </Error>
-        </div>
-      );
+    if (props.messages.pending) {
+      this.cache.set(props.peers.length, 0, props.width, SearchSpinner.getComponentHeight());
+    } else if (props.messages.error) {
+      this.cache.set(props.peers.length, 0, props.width, SearchMessagesError.getComponentHeight());
+    } else {
+      this.cache.set(props.peers.length, 0, props.width, SearchResultCount.getComponentHeight());
     }
+  }
 
-    if (!messages.value.length) {
+  renderRow = ({ index, key, style, parent }: *) => {
+    const { peers, messages } = this.props;
+    if (index < peers.length) {
+      const peerInfo = peers[index];
+
       return (
-        <div className={styles.text}>
-          <Emoji char="☹" size={50} className={styles.textEmoji} />
-          <Text
-            html
-            tagName="div"
-            id="SidebarSearchResults.not_found"
-            values={{ query: this.props.query }}
+        <div key={key} style={style}>
+          <SidebarPeerItem
+            info={peerInfo}
+            active={false}
+            counter={0}
+            onSelect={this.props.onGoToPeer}
           />
         </div>
       );
     }
 
-    const children = messages.value.map((item) => {
+    if (index === peers.length) {
       return (
-        <SidebarSearchItem
-          key={item.focus.rid}
-          info={item.info}
-          before={item.before}
-          after={item.after}
-          focus={item.focus}
-          onGoToPeer={this.props.onGoToPeer}
-          onGoToMessage={this.props.onGoToMessage}
-        />
+        <div key={key} style={style}>
+          {this.renderMessagesState()}
+        </div>
       );
-    });
+    }
 
-    return (
-      <div className={styles.messages}>
-        <Text
-          className={styles.header}
-          html
-          tagName="header"
-          id="SidebarSearchResults.count"
-          values={{ count: messages.value.length.toString() }}
-        />
-        {children}
-      </div>
-    );
+    if (index < peers.length + messages.value.length) {
+      const messageIndex = index - peers.length;
+      const message = messages.value[messageIndex];
+
+      return (
+        <CellMeasurer
+          key={key}
+          parent={parent}
+          cache={this.cache}
+          rowIndex={index}
+          columnIndex={0}
+        >
+          {({ measure }) => (
+            <div style={style}>
+              <SidebarSearchItem
+                info={message.info}
+                before={message.before}
+                after={message.after}
+                focus={message.focus}
+                onMeasure={measure}
+                onGoToPeer={this.props.onGoToPeer}
+                onGoToMessage={this.props.onGoToMessage}
+              />
+            </div>
+          )}
+        </CellMeasurer>
+      );
+    }
+
+    return null;
+  };
+
+  renderEmpty = () => {
+    return null;
+  };
+
+  renderMessagesState() {
+    const { messages } = this.props;
+
+    if (messages.pending) {
+      return <SearchSpinner />;
+    }
+
+    if (messages.error) {
+      return <SearchMessagesError error={messages.error} />;
+    }
+
+    return <SearchResultCount count={messages.value.length} />;
   }
 
   render() {
@@ -110,8 +129,15 @@ class SidebarSearchResults extends PureComponent<SidebarSearchResultsProps> {
 
     return (
       <div className={className}>
-        {this.renderPeers()}
-        {this.renderMessages()}
+        <List
+          width={this.props.width}
+          height={this.props.height}
+          rowCount={this.getRowCount()}
+          rowHeight={this.cache.rowHeight}
+          rowRenderer={this.renderRow}
+          noRowsRenderer={this.renderEmpty}
+          deferredMeasurementCache={this.cache}
+        />
       </div>
     );
   }
